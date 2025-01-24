@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 class DatabaseLoader:
     """Class to handle database connections and basic table loading."""
     
-    DEFAULT_DB_PATH = 'case_study.db'
+    # Update default paths to use data directory
+    DEFAULT_DB_PATH = 'data/case_study.db'
     
     def __init__(self, 
                  db_path: str = DEFAULT_DB_PATH):
@@ -24,7 +25,7 @@ class DatabaseLoader:
         Initialize database connection and set up paths.
         
         Args:
-            db_path: Path to the SQLite database file. Defaults to 'case_study.db'.
+            db_path: Path to the SQLite database file. Defaults to 'data/case_study.db'.
         
         Raises:
             ValueError: If db_path is empty or None
@@ -32,8 +33,10 @@ class DatabaseLoader:
         if not db_path:
             raise ValueError("Database path cannot be empty")
             
-        self.db_path: Path = Path(db_path)
+        self.db_path: Path = Path(db_path).resolve()
         self._engine: Optional[Engine] = None
+        
+        logger.debug(f"Initialized DatabaseLoader with db_path={self.db_path}")
         
     @property
     def engine(self) -> Engine:
