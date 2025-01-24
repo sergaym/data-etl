@@ -4,17 +4,17 @@ Module for loading data from SQLite database.
 
 import logging
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Optional, List, Dict
 
 import pandas as pd
-from sqlalchemy import create_engine, text, inspect
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import Engine
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 class DatabaseLoader:
-    """Class to handle database connections and queries."""
+    """Class to handle database connections and basic table loading."""
     
     def __init__(self, db_path: str = 'case_study.db'):
         """
@@ -68,119 +68,4 @@ class DatabaseLoader:
             DataFrame containing the table data
         """
         logger.info(f"Loading table: {table_name}")
-        return pd.read_sql_table(table_name, self.engine)
-    
-    def load_agreements_with_details(self) -> pd.DataFrame:
-        """
-        Load agreements with related product and meterpoint information.
-        
-        Returns:
-            DataFrame with agreement details including product and meterpoint information
-        """
-        query = """
-        SELECT 
-            a.agreement_id,
-            a.meterpoint_id,
-            a.product_id,
-            a.agreement_valid_from,
-            a.agreement_valid_to,
-            p.display_name as product_name,
-            p.is_variable,
-            m.region as meterpoint_region
-        FROM agreement a
-        LEFT JOIN product p ON a.product_id = p.product_id
-        LEFT JOIN meterpoint m ON a.meterpoint_id = m.meterpoint_id
-        """
-        
-        logger.info("Loading agreements with product and meterpoint details")
-        return pd.read_sql_query(query, self.engine)
-    
-    def get_active_agreements(self, date: str) -> pd.DataFrame:
-        """
-        Get all agreements that were active on a specific date.
-        
-        Args:
-            date: Date string in YYYY-MM-DD format
-            
-        Returns:
-            DataFrame with active agreements
-        """
-        query = """
-        SELECT 
-            a.agreement_id as id,
-            a.meterpoint_id,
-            a.product_id,
-            a.agreement_valid_from as valid_from,
-            a.agreement_valid_to as valid_to,
-            p.display_name as product_name,
-            p.is_variable,
-            m.region as meterpoint_region
-        FROM agreement a
-        LEFT JOIN product p ON a.product_id = p.product_id
-        LEFT JOIN meterpoint m ON a.meterpoint_id = m.meterpoint_id
-        WHERE date(:date) BETWEEN a.agreement_valid_from AND a.agreement_valid_to
-        """
-        
-        logger.info(f"Getting active agreements for date: {date}")
-        return pd.read_sql_query(query, self.engine, params={'date': date})
-    
-    def get_meterpoint_history(self, meterpoint_id: str) -> pd.DataFrame:
-        """
-        Get complete history of agreements for a specific meterpoint.
-        
-        Args:
-            meterpoint_id: ID of the meterpoint
-            
-        Returns:
-            DataFrame with meterpoint's agreement history
-        """
-        query = """
-        SELECT 
-            a.agreement_id,
-            a.meterpoint_id,
-            a.product_id,
-            a.agreement_valid_from,
-            a.agreement_valid_to,
-            p.display_name as product_name,
-            p.is_variable,
-            m.region as meterpoint_region
-        FROM agreement a
-        LEFT JOIN product p ON a.product_id = p.product_id
-        LEFT JOIN meterpoint m ON a.meterpoint_id = m.meterpoint_id
-        WHERE a.meterpoint_id = :meterpoint_id
-        ORDER BY a.agreement_valid_from
-        """
-        
-        logger.info(f"Getting history for meterpoint: {meterpoint_id}")
-        return pd.read_sql_query(query, self.engine, params={'meterpoint_id': meterpoint_id})
-    
-    def get_database_summary(self) -> Dict:
-        """
-        Get summary statistics about the database.
-        
-        Returns:
-            Dictionary containing summary statistics
-        """
-        summary = {}
-        
-        # Get table counts
-        for table in self.get_table_names():
-            count = pd.read_sql_query(f"SELECT COUNT(*) as count FROM {table}", self.engine)
-            summary[f"{table}_count"] = count['count'].iloc[0]
-        
-        # Get date ranges for agreements
-        date_range = pd.read_sql_query(
-            """
-            SELECT 
-                MIN(agreement_valid_from) as min_date,
-                MAX(agreement_valid_to) as max_date 
-            FROM agreement
-            """,
-            self.engine
-        )
-        summary['agreement_date_range'] = {
-            'start': date_range['min_date'].iloc[0],
-            'end': date_range['max_date'].iloc[0]
-        }
-        
-        return summary 
+        return pd.read_sql_table(table_name, self.engine) 
