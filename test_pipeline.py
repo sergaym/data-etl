@@ -90,7 +90,7 @@ def main():
         print(df_product_daily.head())
         print(f"Total product-days: {len(df_product_daily)}")
         ## pending to check units, if the total consumption is summed properly, if we are using properly the concept of 2021-01-01
-
+        """
         # Initialize writer
         writer = PostgresWriter()
 
@@ -109,6 +109,7 @@ def main():
             print(f"Rows: {info['row_count']}")
             print(f"Last update: {info['last_update']}")
             print(f"Columns: {', '.join(info['columns'])}")
+        """
     except Exception as e:
         print(f"Error: {e}")
 if __name__ == "__main__":
