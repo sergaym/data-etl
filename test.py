@@ -2,8 +2,9 @@
 Main script for processing meter readings data.
 """
 
-from src.data_ingestion import load_json_readings, get_data_summary, DatabaseLoader
-from src.data_loading import PostgresWriter
+from src.extraction import load_json_readings, get_data_summary, DatabaseLoader
+from src.transformation.transformers import DataTransformer
+from src.loading import PostgresWriter
 
 def main():
     try:
@@ -60,7 +61,6 @@ def main():
         
         # Part 3: Transform Data
         print("\n=== Transforming Data ===")
-        from src.data_transformation.transformers import DataTransformer
         
         transformer = DataTransformer(
             df_readings=df_readings,
