@@ -164,9 +164,14 @@ class DatabaseLoader:
             count = pd.read_sql_query(f"SELECT COUNT(*) as count FROM {table}", self.engine)
             summary[f"{table}_count"] = count['count'].iloc[0]
         
-        # Get date ranges for agreements using correct column names
+        # Get date ranges for agreements
         date_range = pd.read_sql_query(
-            "SELECT MIN(start_date) as min_date, MAX(end_date) as max_date FROM agreement",
+            """
+            SELECT 
+                MIN(agreement_valid_from) as min_date,
+                MAX(agreement_valid_to) as max_date 
+            FROM agreement
+            """,
             self.engine
         )
         summary['agreement_date_range'] = {
