@@ -1,40 +1,54 @@
 import json
-import os
+import pandas as pd
 from pathlib import Path
 
 def read_json_files(folder_path='readings'):
     """
-    Read all JSON files from the specified folder
+    Read all JSON files from the specified folder and combine them into a single DataFrame
     
     Args:
         folder_path (str): Path to the folder containing JSON files
         
     Returns:
-        list: List of dictionaries containing the JSON data
+        pd.DataFrame: Combined DataFrame with all readings
     """
-    json_data = []
-    
-    # Create a Path object for the folder
+    all_dataframes = []
     folder = Path(folder_path)
     
-    # Iterate through all files in the folder
     for file_path in folder.glob('*.json'):
         try:
             with open(file_path, 'r') as file:
-                data = json.load(file)
-                json_data.append(data)
-        except json.JSONDecodeError as e:
-            print(f"Error reading {file_path}: {e}")
+                json_content = json.load(file)
+                # Create DataFrame directly from the data array using the columns specified in the JSON
+                df = pd.DataFrame(json_content['data'], columns=json_content['columns'])
+                all_dataframes.append(df)
         except Exception as e:
-            print(f"Unexpected error reading {file_path}: {e}")
-            
-    return json_data
+            print(f"Error processing {file_path}: {e}")
+    
+    if not all_dataframes:
+        return pd.DataFrame()
+    
+    # Concatenate all DataFrames at once
+    combined_df = pd.concat(all_dataframes, ignore_index=True)
+    
+    # Convert timestamp to datetime
+    combined_df['interval_start'] = pd.to_datetime(combined_df['interval_start'])
+    
+    # Sort by timestamp and meterpoint_id
+    combined_df.sort_values(['meterpoint_id', 'interval_start'], inplace=True)
+    
+    return combined_df
 
-# Example usage
 if __name__ == "__main__":
-    data = read_json_files()
-    print(f"Found {len(data)} JSON files")
-    # Print the content of each JSON file
-    for i, item in enumerate(data, 1):
-        print(f"\nFile {i}:")
-        print(item)
+    # Read all JSON files and create DataFrame
+    df = read_json_files()
+    
+    # Print summary information
+    print("\nDataFrame Summary:")
+    print(f"Total number of readings: {len(df)}")
+    print(f"Number of unique meterpoints: {df['meterpoint_id'].nunique()}")
+    print(f"Date range: {df['interval_start'].min()} to {df['interval_start'].max()}")
+    
+    # Display first few rows
+    print("\nFirst few readings:")
+    print(df.head())
