@@ -1,54 +1,30 @@
-import json
-import pandas as pd
-from pathlib import Path
+"""
+Main script for processing meter readings data.
+"""
 
-def read_json_files(folder_path='readings'):
-    """
-    Read all JSON files from the specified folder and combine them into a single DataFrame
-    
-    Args:
-        folder_path (str): Path to the folder containing JSON files
+from src.data_ingestion import load_json_readings
+from src.data_ingestion.json_loader import get_data_summary
+
+def main():
+    try:
+        # Load all JSON files into a DataFrame
+        df = load_json_readings()
         
-    Returns:
-        pd.DataFrame: Combined DataFrame with all readings
-    """
-    all_dataframes = []
-    folder = Path(folder_path)
-    
-    for file_path in folder.glob('*.json'):
-        try:
-            with open(file_path, 'r') as file:
-                json_content = json.load(file)
-                # Create DataFrame directly from the data array using the columns specified in the JSON
-                df = pd.DataFrame(json_content['data'], columns=json_content['columns'])
-                all_dataframes.append(df)
-        except Exception as e:
-            print(f"Error processing {file_path}: {e}")
-    
-    if not all_dataframes:
-        return pd.DataFrame()
-    
-    # Concatenate all DataFrames at once
-    combined_df = pd.concat(all_dataframes, ignore_index=True)
-    
-    # Convert timestamp to datetime
-    combined_df['interval_start'] = pd.to_datetime(combined_df['interval_start'])
-    
-    # Sort by timestamp and meterpoint_id
-    combined_df.sort_values(['meterpoint_id', 'interval_start'], inplace=True)
-    
-    return combined_df
+        # Get and print data summary
+        summary = get_data_summary(df)
+        
+        print("\nData Summary:")
+        print(f"Total number of readings: {summary['total_readings']:,}")
+        print(f"Number of unique meterpoints: {summary['unique_meterpoints']:,}")
+        print(f"Date range: {summary['date_range']['start']} to {summary['date_range']['end']}")
+        print(f"Total consumption: {summary['total_consumption']:,.2f}")
+        print(f"Average consumption: {summary['average_consumption']:.4f}")
+        
+        print("\nFirst few readings:")
+        print(df.head())
+        
+    except Exception as e:
+        print(f"Error: {e}")
 
 if __name__ == "__main__":
-    # Read all JSON files and create DataFrame
-    df = read_json_files()
-    
-    # Print summary information
-    print("\nDataFrame Summary:")
-    print(f"Total number of readings: {len(df)}")
-    print(f"Number of unique meterpoints: {df['meterpoint_id'].nunique()}")
-    print(f"Date range: {df['interval_start'].min()} to {df['interval_start'].max()}")
-    
-    # Display first few rows
-    print("\nFirst few readings:")
-    print(df.head())
+    main()
