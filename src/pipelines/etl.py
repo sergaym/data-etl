@@ -7,12 +7,19 @@ Enterprise-Grade ETL Pipeline for Meter Readings Data.
 import time
 import sys
 import argparse
+import os
+from pathlib import Path
+
+# Add project root to Python path
+project_root = Path(__file__).parent.parent.parent
+sys.path.append(str(project_root))
+
 from extraction import load_json_readings, get_data_summary, DatabaseLoader
 from transformation.transformers import DataTransformer
-from loading import PostgresWriter
-from utils.logger import get_logger
+from loading.db_writer import PostgresWriter
+from utils.logger import setup_logger
 
-logger = get_logger("etl_pipeline")
+logger = setup_logger("etl_pipeline")
 
 def extract_data():
     """
