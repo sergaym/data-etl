@@ -3,7 +3,8 @@ Module for transforming data into analytics tables.
 """
 
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
+from typing import Union
 
 class DataTransformer:
     """Class to transform raw data into analytics tables."""
@@ -27,14 +28,30 @@ class DataTransformer:
         # Ensure datetime type for readings
         self.df_readings['interval_start'] = pd.to_datetime(self.df_readings['interval_start'])
         
-    def get_active_agreements_2021(self) -> pd.DataFrame:
+    def get_active_agreements(self, reference_date: Union[str, date, datetime] = '2021-01-01') -> pd.DataFrame:
         """
-        Get all agreements active on January 1st, 2021.
+        Get all agreements active on a specific reference date.
+        
+        Args:
+            reference_date: The date to check for active agreements.
+                          Can be a string ('YYYY-MM-DD'), date, or datetime object.
+                          Defaults to '2021-01-01'.
         
         Returns:
-            DataFrame with one row per active agreement including agreement details
+            DataFrame with one row per active agreement including:
+            - agreement_id: Unique identifier for the agreement
+            - meterpoint_id: Associated meter point identifier
+            - display_name: Product display name
+            - is_variable: Whether the product has variable pricing
+        
+        Raises:
+            ValueError: If reference_date is not in a valid format
         """
-        reference_date = '2021-01-01'
+        # Convert reference_date to string if it's a date/datetime object
+        if isinstance(reference_date, (date, datetime)):
+            reference_date = reference_date.strftime('%Y-%m-%d')
+        elif not isinstance(reference_date, str):
+            raise ValueError("reference_date must be a string ('YYYY-MM-DD'), date, or datetime object")
         
         # Filter for active agreements
         active_agreements = self.df_agreement[
@@ -60,7 +77,7 @@ class DataTransformer:
             'is_variable'
         ]
         
-        return result[final_columns]
+        return result[final_columns].sort_values('agreement_id')
     
     def get_halfhourly_consumption(self) -> pd.DataFrame:
         """
