@@ -57,6 +57,38 @@ def main():
         print(df_meterpoint.head())
         print(f"Shape: {df_meterpoint.shape}")
         
+        # Part 3: Transform Data
+        print("\n=== Transforming Data ===")
+        from src.data_transformation.transformers import DataTransformer
+        
+        transformer = DataTransformer(
+            df_readings=df_readings,
+            df_agreement=df_agreement,
+            df_product=df_product,
+            df_meterpoint=df_meterpoint
+        )
+        
+        # Define reference date for analysis
+        reference_date = '2022-06-15'
+        
+        # Generate analytics tables
+        df_active_agreements = transformer.get_active_agreements(reference_date)
+        df_halfhourly = transformer.get_halfhourly_consumption()
+        df_product_daily = transformer.get_daily_product_consumption()
+        
+        # Print summaries of the analytics tables
+        print("\nActive Agreements (2021-01-01):")
+        print(df_active_agreements.head())
+        print(f"Total active agreements: {len(df_active_agreements)}")
+        
+        print("\nHalf-hourly Consumption:")
+        print(df_halfhourly.head())
+        print(f"Total time periods: {len(df_halfhourly)}")
+        
+        print("\nDaily Product Consumption:")
+        print(df_product_daily.head())
+        print(f"Total product-days: {len(df_product_daily)}")
+        ## pending to check units, if the total consumption is summed properly, if we are using properly the concept of 2021-01-01
     except Exception as e:
         print(f"Error: {e}")
 if __name__ == "__main__":
