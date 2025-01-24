@@ -3,6 +3,7 @@ Main script for processing meter readings data.
 """
 
 from src.data_ingestion import load_json_readings, get_data_summary, DatabaseLoader
+from src.data_loading import PostgresWriter
 
 def main():
     try:
@@ -88,7 +89,26 @@ def main():
         print("\nDaily Product Consumption:")
         print(df_product_daily.head())
         print(f"Total product-days: {len(df_product_daily)}")
-        ## pending to check units, if the total consumption is summed properly, if we are using properly the concept of 2021-01-01
+        ## pending to check units, if the total consumption is summed properly, if we are using properly the concept of 2021-01-01
+
+        # Initialize writer
+        writer = PostgresWriter()
+
+        # Create analytics schema
+        writer.create_analytics_schema()
+
+        # Write transformed data
+        writer.write_active_agreements(df_active_agreements, reference_date='2021-01-01')
+        writer.write_halfhourly_consumption(df_halfhourly)
+        writer.write_daily_product_consumption(df_product_daily)
+
+        # Get information about loaded tables
+        table_info = writer.get_table_info()
+        for table, info in table_info.items():
+            print(f"\n{table}:")
+            print(f"Rows: {info['row_count']}")
+            print(f"Last update: {info['last_update']}")
+            print(f"Columns: {', '.join(info['columns'])}")
     except Exception as e:
         print(f"Error: {e}")
 if __name__ == "__main__":
