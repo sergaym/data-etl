@@ -1,0 +1,18 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pandas = "==2.2.1"
+numpy = "==1.26.4"
+jupyter = "==1.0.0"
+ipykernel = "==6.29.3"
+
+[dev-packages]
+black = "==24.2.0"
+flake8 = "==7.0.0"
+pytest = "==8.0.2"
+
+[requires]
+python_version = "3.9" 
