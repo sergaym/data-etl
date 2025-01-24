@@ -25,7 +25,7 @@ class DatabaseLoader:
         """
         self.db_path = Path(db_path)
         self._engine: Optional[Engine] = None
-        
+
     @property
     def engine(self) -> Engine:
         """Lazy loading of database engine."""
@@ -79,13 +79,17 @@ class DatabaseLoader:
         """
         query = """
         SELECT 
-            a.*,
-            p.name as product_name,
-            p.is_variable as product_is_variable,
+            a.agreement_id,
+            a.meterpoint_id,
+            a.product_id,
+            a.agreement_valid_from,
+            a.agreement_valid_to,
+            p.display_name as product_name,
+            p.is_variable,
             m.region as meterpoint_region
         FROM agreement a
-        LEFT JOIN product p ON a.product_id = p.id
-        LEFT JOIN meterpoint m ON a.meterpoint_id = m.id
+        LEFT JOIN product p ON a.product_id = p.product_id
+        LEFT JOIN meterpoint m ON a.meterpoint_id = m.meterpoint_id
         """
         
         logger.info("Loading agreements with product and meterpoint details")
@@ -101,24 +105,20 @@ class DatabaseLoader:
         Returns:
             DataFrame with active agreements
         """
-        # First, let's check the actual column names
-        schema = self.get_table_schema('agreement')
-        date_columns = [col['name'] for col in schema if 'date' in col['name'].lower()]
-        
-        if not date_columns:
-            raise ValueError("Could not find date columns in agreement table")
-        
-        # Assuming we find the correct column names, update the query
         query = """
         SELECT 
-            a.*,
-            p.name as product_name,
-            p.is_variable as product_is_variable,
+            a.agreement_id as id,
+            a.meterpoint_id,
+            a.product_id,
+            a.agreement_valid_from as valid_from,
+            a.agreement_valid_to as valid_to,
+            p.display_name as product_name,
+            p.is_variable,
             m.region as meterpoint_region
         FROM agreement a
-        LEFT JOIN product p ON a.product_id = p.id
-        LEFT JOIN meterpoint m ON a.meterpoint_id = m.id
-        WHERE date(:date) BETWEEN a.start_date AND a.end_date
+        LEFT JOIN product p ON a.product_id = p.product_id
+        LEFT JOIN meterpoint m ON a.meterpoint_id = m.meterpoint_id
+        WHERE date(:date) BETWEEN a.agreement_valid_from AND a.agreement_valid_to
         """
         
         logger.info(f"Getting active agreements for date: {date}")
@@ -136,15 +136,19 @@ class DatabaseLoader:
         """
         query = """
         SELECT 
-            a.*,
-            p.name as product_name,
-            p.is_variable as product_is_variable,
+            a.agreement_id,
+            a.meterpoint_id,
+            a.product_id,
+            a.agreement_valid_from,
+            a.agreement_valid_to,
+            p.display_name as product_name,
+            p.is_variable,
             m.region as meterpoint_region
         FROM agreement a
-        LEFT JOIN product p ON a.product_id = p.id
-        LEFT JOIN meterpoint m ON a.meterpoint_id = m.id
+        LEFT JOIN product p ON a.product_id = p.product_id
+        LEFT JOIN meterpoint m ON a.meterpoint_id = m.meterpoint_id
         WHERE a.meterpoint_id = :meterpoint_id
-        ORDER BY a.start_date
+        ORDER BY a.agreement_valid_from
         """
         
         logger.info(f"Getting history for meterpoint: {meterpoint_id}")
