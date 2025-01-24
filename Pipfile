@@ -8,6 +8,7 @@ pandas = "==2.2.1"
 numpy = "==1.26.4"
 jupyter = "==1.0.0"
 ipykernel = "==6.29.3"
+sqlalchemy = "==2.0.27"
 
 [dev-packages]
 black = "==24.2.0"
