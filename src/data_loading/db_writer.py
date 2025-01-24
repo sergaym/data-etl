@@ -37,7 +37,12 @@ class PostgresWriter:
             'password': os.getenv('PGPASSWORD')
         }
         
+        # Get schema name from environment or use default
+        self.schema = os.getenv('ANALYTICS_SCHEMA', 'dev')
+        
         self._engine: Optional[Engine] = None
+        
+        logger.info(f"Initialized PostgresWriter with schema: {self.schema}")
         
     @property
     def engine(self) -> Engine:
@@ -53,11 +58,11 @@ class PostgresWriter:
         return self._engine
     
     def create_analytics_schema(self) -> None:
-        """Create analytics schema if it doesn't exist."""
+        """Create schema if it doesn't exist."""
         with self.engine.connect() as conn:
-            conn.execute(text("CREATE SCHEMA IF NOT EXISTS analytics;"))
+            conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {self.schema};"))
             conn.commit()
-            logger.info("Analytics schema created or verified")
+            logger.info(f"Schema '{self.schema}' created or verified")
     
     def write_active_agreements(self, df: pd.DataFrame, reference_date: str) -> None:
         """
@@ -68,7 +73,6 @@ class PostgresWriter:
             reference_date: The reference date for which agreements are active
         """
         table_name = 'active_agreements'
-        schema = 'analytics'
         
         # Add metadata columns
         df['reference_date'] = pd.to_datetime(reference_date)
@@ -76,12 +80,12 @@ class PostgresWriter:
         
         df.to_sql(
             name=table_name,
-            schema=schema,
+            schema=self.schema,
             con=self.engine,
             if_exists='replace',
             index=False
         )
-        logger.info(f"Wrote {len(df)} rows to {schema}.{table_name}")
+        logger.info(f"Wrote {len(df)} rows to {self.schema}.{table_name}")
     
     def write_halfhourly_consumption(self, df: pd.DataFrame) -> None:
         """
@@ -91,19 +95,18 @@ class PostgresWriter:
             df: DataFrame containing half-hourly consumption data
         """
         table_name = 'halfhourly_consumption'
-        schema = 'analytics'
         
         # Add metadata column
         df['loaded_at'] = datetime.now()
         
         df.to_sql(
             name=table_name,
-            schema=schema,
+            schema=self.schema,
             con=self.engine,
             if_exists='replace',
             index=False
         )
-        logger.info(f"Wrote {len(df)} rows to {schema}.{table_name}")
+        logger.info(f"Wrote {len(df)} rows to {self.schema}.{table_name}")
     
     def write_daily_product_consumption(self, df: pd.DataFrame) -> None:
         """
@@ -113,30 +116,30 @@ class PostgresWriter:
             df: DataFrame containing daily product consumption data
         """
         table_name = 'daily_product_consumption'
-        schema = 'analytics'
         
         # Add metadata column
         df['loaded_at'] = datetime.now()
         
         df.to_sql(
             name=table_name,
-            schema=schema,
+            schema=self.schema,
             con=self.engine,
             if_exists='replace',
             index=False
         )
-        logger.info(f"Wrote {len(df)} rows to {schema}.{table_name}")
+        logger.info(f"Wrote {len(df)} rows to {self.schema}.{table_name}")
     
-    def get_table_info(self, schema: str = 'analytics') -> Dict:
+    def get_table_info(self, schema: Optional[str] = None) -> Dict:
         """
-        Get information about tables in the analytics schema.
+        Get information about tables in the specified schema.
         
         Args:
-            schema: Database schema to inspect. Defaults to 'analytics'.
+            schema: Database schema to inspect. Defaults to the configured schema.
         
         Returns:
             Dictionary containing table information including row counts
         """
+        schema = schema or self.schema
         inspector = inspect(self.engine)
         info = {}
         
