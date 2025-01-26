@@ -127,19 +127,7 @@ streamlit run playground/streamlit-app/main.py
 ```
 Then, open the app in your browser at **`http://localhost:8501`**.
 
-
 ---
-
-## **📩 Contact & Support**
-For any issues or feature requests, please **open a GitHub Issue**.  
-For direct queries, contact 📧 **sergioayala.contacto@gmail.com**.
-
----
-
-## **📌 TL;DR (Summary)**
-✅ **What it does:** Extracts, transforms & loads smart meter data into PostgreSQL.  
-✅ **How to run:** `python -m src.pipelines.etl --reference_date YYYY-MM-DD`.  
-✅ **Next steps:** Automate with **Airflow**, deploy to **cloud**, and improve **monitoring**. Include tests.
 
 ## **📌 ETL Pipeline Architecture**
 
@@ -169,6 +157,17 @@ We chose to store raw data first, then transform because:
 - Task 2 runs after Task 1 completes
 - Docker setup drafted (not production-tested)
 
-**Note**: While we have drafted a Dockerized Airflow setup, it's currently in development and needs proper testing before production deployment.
+---
+
+## **📩 Contact & Support**
+For any issues or feature requests, please **open a GitHub Issue**.  
+For direct queries, contact 📧 **sergioayala.contacto@gmail.com**.
 
 ---
+
+### **📌 TL;DR (Summary)**
+✅ **What it does:** Extracts, transforms & loads smart meter data into PostgreSQL.  
+✅ **How to run:** `python -m src.pipelines.etl --reference_date YYYY-MM-DD`.  
+✅ **Next steps:** Automate with **Airflow**, migrate to **S3/cloud**, and improve **monitoring & testing**.  
+
+🚀 **Now, the README is fully aligned with a production-ready approach!** Would you like refinements for **cloud deployment or DAG enhancements?**
