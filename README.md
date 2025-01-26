@@ -13,10 +13,9 @@ This version **focuses on batch processing**, with **orchestration, monitoring, 
 
 ---
 
-## **⚙️ Design Choices & Architecture**  
-This ETL pipeline follows a **modular & scalable architecture**, ensuring **maintainability, team collaboration, and easy extensibility**.
+## **⚙️ ETL Architecture & Data Flow**  
+This ETL pipeline follows a **modular & scalable architecture**, ensuring **maintainability, automation, and easy extensibility**.
 
-### **🔹 Architecture Overview**
 ```
 src/
 ├── extraction/         # Extracts data from JSON files and SQLite
@@ -26,13 +25,12 @@ src/
 └── utils/              # Shared utilities (logging, config)
 ```
 
-### **🔹 Key Design Principles**
-| **Principle**             | **Implementation** |
-|---------------------------|-------------------|
-| **🔹 Modular Structure** | Each ETL step is **self-contained**, allowing **parallel development** across teams. |
-| **🔹 Data Storage Strategy** | Stores **raw data** (`raw_data` schema) & **transformed data** (`analytics` schema). |
-| **🔹 Data Quality & Monitoring** | Enforces **schema validation**, **type checking**, & **structured logging**. |
-| **🔹 Scalability & Extensibility** | Designed for **batch & future real-time processing** (Airflow, PySpark). |
+| **Step**            | **Description** |
+|---------------------|----------------|
+| **Extract**         | Reads raw data from JSON & SQLite. |
+| **Store Raw Data**  | Saves extracted data in PostgreSQL (`raw_data` schema). |
+| **Transform**       | Processes raw data into structured analytics. |
+| **Load Analytics**  | Saves processed data into PostgreSQL (`analytics` schema). |
 
 ---
 
