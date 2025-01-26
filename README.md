@@ -69,11 +69,18 @@ This ETL pipeline **preserves both raw and transformed data** to support both **
 ## **📌 Future Roadmap**
 | **Feature** | **Why?** | **Priority** |
 |------------|---------|-------------|
+| **Test Coverage & Quality** | Ensure reliability & maintainability. | 🚨 Critical |
 | **Airflow/Dagster Orchestration** | Automate scheduling & monitoring. | 🚀 High |
 | **Cloud Deployment (AWS/GCP)** | Make ETL cloud-native & scalable. | 🔥 High |
 | **Event-Based Processing** | Support near real-time data ingestion. | ⚡ Medium |
 | **Monitoring (Grafana/Prometheus)** | Ensure observability & alerts. | 🔍 Medium |
 | **CI/CD (GitHub Actions)** | Automate testing & deployments. | ✅ Medium |
+
+_Test Coverage Plan:_
+- Unit tests for extraction, transformation & loading
+- Integration tests for end-to-end pipeline
+- Data quality validation tests
+- Performance & scalability tests
 
 ---
 
@@ -93,7 +100,7 @@ To process data for a specific date:
 python -m src.pipelines.etl --reference_date 2023-01-01
 ```
 
-### **3️⃣ Run ETL with Airflow**
+### **3️⃣ Run ETL with Airflow** (🔹 Not yet implemented)
 To schedule the ETL pipeline using **Apache Airflow**:
 ```bash
 airflow dags trigger etl_pipeline
@@ -103,31 +110,6 @@ airflow dags trigger etl_pipeline
 
 ---
 
-## **🛠️ How to Test**
-This repository follows **Test-Driven Development (TDD)** with **unit tests for each ETL step**.
-
-### **1️⃣ Run All Tests**
-```bash
-pytest tests/
-```
-or with test coverage:
-```bash
-pytest --cov=src
-```
-
-### **2️⃣ Test Individual Components**
-```bash
-pytest tests/test_extraction.py
-pytest tests/test_transformation.py
-pytest tests/test_loading.py
-```
-
-✅ **What's covered?**  
-- **Data extraction works correctly** (valid JSON/DB queries).  
-- **Transformations return correct outputs** (schema, aggregations, business logic).  
-- **Data loads successfully into PostgreSQL** (valid inserts, no duplicates).  
-
----
 
 ## **📌 Bonus: Streamlit App for Analytics Table Exploration** 🎉  
 
