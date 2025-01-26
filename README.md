@@ -95,16 +95,30 @@ To process data for a specific date:
 python -m src.pipelines.etl --reference_date 2023-01-01
 ```
 
-### **3️⃣ Run ETL with Airflow** (🔹 Not yet implemented)
-To schedule the ETL pipeline using **Apache Airflow**:
-```bash
-airflow dags trigger etl_pipeline
-```
-🔹 **Make sure Airflow is running** (`airflow webserver` and `airflow scheduler`).  
+### **3️⃣ Run ETL with Airflow** (🚧 Draft Implementation)
+We have drafted an Airflow-based orchestration setup (not yet production-ready):
 
+```bash
+# Note: This is a draft implementation
+airflow dags trigger meter_readings_etl
+```
+
+🔹 **Current Status:**
+- ✅ DAG logic implemented (`meter_readings_etl.py`)
+- ✅ Docker configuration drafted
+- ❌ Not yet tested in production
+- ❌ Pending proper deployment setup
+
+🔹 **Next Steps for Airflow Implementation:**
+1. Test Docker setup
+2. Add monitoring & alerting
+3. Configure proper security
+4. Set up CI/CD pipeline
+5. Document deployment process
+
+For now, please use the manual ETL execution method described above.
 
 ---
-
 
 ## **📌 Bonus: Streamlit App for Analytics Table Exploration** 🎉  
 
