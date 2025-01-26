@@ -34,6 +34,21 @@ src/
 
 ---
 
+## **📌 Handling `reference_date` in the Pipeline**  
+
+### **🔹 Current Implementation**  
+- **`reference_date` is set to `2021-01-01` by default**, as per the case study requirements.  
+- **Raw data is always ingested fully** → we store all available readings and metadata.  
+- **Analytics tables reference `reference_date`** to filter and aggregate data.  
+
+### **🔹 Future Improvements for `reference_date` Handling**  
+✔ **Update how we fetch raw data** → Instead of reading everything, **fetch data incrementally** (e.g., from dated folders in S3 or an API with timestamp-based filtering).  
+✔ **Support dynamic `reference_date` changes** → Right now, **it's hardcoded for January 1, 2021**, but in real scenarios, we must **handle different reporting periods** dynamically.  
+✔ **Implement a configuration layer** → Define how `reference_date` should be set for different reports (fixed vs. rolling periods).  
+✔ **Improve Airflow DAG parameterization** → Allow running different `reference_date` values in Airflow dynamically.
+
+---
+
 ## **📌 Data Storage Strategy**
 This ETL pipeline **preserves both raw and transformed data** to support both **analytics and direct querying** by analysts.
 
@@ -43,7 +58,7 @@ This ETL pipeline **preserves both raw and transformed data** to support both **
 | **raw_data** | `raw_agreements`            | Stores raw contract agreement records. |
 | **raw_data** | `raw_products`              | Stores product/tariff details. |
 | **raw_data** | `raw_meterpoints`           | Stores raw meterpoint metadata. |
-| **analytics** | `active_agreements`         | Agreements valid on 2021-01-01 for reporting. |
+| **analytics** | `active_agreements`         | Agreements valid on **reference_date**. |
 | **analytics** | `half_hourly_consumption`   | Aggregated consumption per half-hour. |
 | **analytics** | `daily_product_consumption` | Aggregated daily consumption per product. |
 
@@ -60,21 +75,21 @@ This ETL pipeline **preserves both raw and transformed data** to support both **
 | **Performance** | Currently **single-threaded**, in-memory transformations. | **Migrate to PySpark** for large-scale distributed processing. |
 | **Orchestration** | No automated scheduling yet. | Integrate **Airflow/Dagster** for automation & monitoring. |
 | **Error Handling** | Basic logging & schema validation. | **Enhance failure recovery** with retries & alerting. |
+| **Reference Date Handling** | Hardcoded to `2021-01-01` in analytics. | **Allow configurable reference periods & dynamic execution.** |
 | **Cloud Storage** | Reads raw data from local files. | **Migrate raw storage to S3 / cloud-based DB.** |
-
 ---
 
 ## **📌 Future Roadmap**
 | **Feature** | **Why?** | **Priority** |
 |------------|---------|-------------|
 | **S3 Integration & Cloud Migration** | Move raw data to **S3**, replace SQLite with **PostgreSQL RDS**. | 🚨 Critical |
-| **Airflow DAG Optimization** | Implement modular **task-based orchestration**. | 🚀 High |
-| **Test Coverage & Quality** | Ensure reliability & maintainability. | 🔥 High |
-| **Event-Based Processing** | Support near real-time data ingestion. | ⚡ Medium |
+| **Reference Date Handling Improvements** | Implement **dynamic date selection & automatic period filtering**. | 🚀 High |
+| **Airflow DAG Optimization** | Implement modular **task-based orchestration**. | 🔥 High |
 | **Monitoring (Grafana/Prometheus)** | Ensure observability & alerts. | 🔍 Medium |
 | **CI/CD (GitHub Actions)** | Automate testing & deployments. | ✅ Medium |
-| **Schema-Based Data Validation** | Define clear **Pydantic schemas** for structured validation before ingestion. | ⚡ Medium |
-| **Analytics Modeling (dbt)** | Introduce **dbt** for transformation layer consistency & reusability. | ⚡ Medium |
+| **Test Coverage & Quality** | Ensure reliability & maintainability. | ⚡ Medium |
+| **Schema-Based Data Validation** | Define clear **Pydantic schemas** for structured validation before ingestion. | ✅ Medium |
+| **Analytics Modeling (dbt)** | Introduce **dbt** for transformation layer consistency & reusability. | ✅ Medium |
 ---
 
 ## **📌 Usage Instructions**
@@ -90,7 +105,7 @@ pipenv install
 ### **2️⃣ Run the ETL Manually**
 To process data for a specific date:
 ```bash
-python -m src.pipelines.etl.py --reference_date 2023-01-01
+python -m src.pipelines.etl.py --reference_date 2021-01-01
 ```
 
 ### **3️⃣ Run ETL with Airflow** (🚧 Draft Implementation)
@@ -149,6 +164,5 @@ For direct queries, contact 📧 **sergioayala.contacto@gmail.com**.
 
 ### **📌 TL;DR (Summary)**
 ✅ **What it does:** Extracts, transforms & loads smart meter data into PostgreSQL.  
-✅ **How to run:** `python -m src.pipelines.etl --reference_date YYYY-MM-DD`.  
-✅ **Next steps:** Automate with **Airflow**, migrate to **S3/cloud**, and improve **monitoring & testing**.  
-
+✅ **How to run:** `python -m src.pipelines.etl --reference_date 2021-01-01`.  
+✅ **Next steps:** Improve **reference date handling, automate with Airflow**, migrate to **S3/cloud**, and enhance **monitoring & testing**.  
