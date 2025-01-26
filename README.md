@@ -122,7 +122,7 @@ pytest tests/test_transformation.py
 pytest tests/test_loading.py
 ```
 
-✅ **What’s covered?**  
+✅ **What's covered?**  
 - **Data extraction works correctly** (valid JSON/DB queries).  
 - **Transformations return correct outputs** (schema, aggregations, business logic).  
 - **Data loads successfully into PostgreSQL** (valid inserts, no duplicates).  
@@ -156,4 +156,36 @@ For direct queries, contact 📧 **sergioayala.contacto@gmail.com**.
 ## **📌 TL;DR (Summary)**
 ✅ **What it does:** Extracts, transforms & loads smart meter data into PostgreSQL.  
 ✅ **How to run:** `python -m src.pipelines.etl --reference_date YYYY-MM-DD`.  
-✅ **Next steps:** Automate with **Airflow/Dagster**, deploy to **cloud**, and improve **monitoring**. Include tests.
+✅ **Next steps:** Automate with **Airflow**, deploy to **cloud**, and improve **monitoring**. Include tests.
+
+## **📌 ETL Pipeline Architecture**
+
+### **🔹 Two-Task Pipeline Design**
+The ETL pipeline is divided into two distinct tasks for better scalability and data integrity:
+
+1. **Task 1: Extract & Store Raw**
+   - Extracts data from JSON files and SQLite
+   - Stores in PostgreSQL `raw_data` schema
+   - Ensures data traceability
+
+2. **Task 2: Transform & Load Analytics**
+   - Reads from PostgreSQL raw tables
+   - Transforms data for analytics
+   - Loads to `analytics` schema
+
+### **🔹 Why This Approach?**
+We chose to store raw data first, then transform because:
+- ✅ Ensures data integrity and traceability
+- ✅ Enables independent access to raw data
+- ✅ Supports better error recovery
+- ✅ Facilitates debugging and reprocessing
+
+### **🔹 Airflow Implementation**
+- DAG configured to run tasks sequentially
+- Task 1 runs at 8:30 AM (after source updates)
+- Task 2 runs after Task 1 completes
+- Docker setup drafted (not production-tested)
+
+**Note**: While we have drafted a Dockerized Airflow setup, it's currently in development and needs proper testing before production deployment.
+
+---
