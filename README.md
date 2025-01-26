@@ -134,33 +134,6 @@ Then, open the app in your browser at **`http://localhost:8501`**.
 
 ---
 
-## **📌 ETL Pipeline Architecture**
-
-### **🔹 Two-Task Pipeline Design**
-The ETL pipeline is divided into two distinct tasks for better scalability and data integrity:
-
-1. **Task 1: Extract & Store Raw**
-   - Extracts data from JSON files and SQLite
-   - Stores in PostgreSQL `raw_data` schema
-   - Ensures data traceability
-
-2. **Task 2: Transform & Load Analytics**
-   - Reads from PostgreSQL raw tables
-   - Transforms data for analytics
-   - Loads to `analytics` schema
-
-### **🔹 Why This Approach?**
-We chose to store raw data first, then transform because:
-- ✅ Ensures data integrity and traceability
-- ✅ Enables independent access to raw data
-- ✅ Supports better error recovery
-- ✅ Facilitates debugging and reprocessing
-
-### **🔹 Airflow Implementation**
-- DAG configured to run tasks sequentially
-- Task 1 runs at 8:30 AM (after source updates)
-- Task 2 runs after Task 1 completes
-- Docker setup drafted (not production-tested)
 
 ---
 
