@@ -73,7 +73,8 @@ This ETL pipeline **preserves both raw and transformed data** to support both **
 | **Event-Based Processing** | Support near real-time data ingestion. | ⚡ Medium |
 | **Monitoring (Grafana/Prometheus)** | Ensure observability & alerts. | 🔍 Medium |
 | **CI/CD (GitHub Actions)** | Automate testing & deployments. | ✅ Medium |
-
+| **Schema-Based Data Validation** | Define clear **Pydantic schemas** for structured validation before ingestion. | ⚡ Medium |
+| **Analytics Modeling (dbt)** | Introduce **dbt** for transformation layer consistency & reusability. | ⚡ Medium |
 ---
 
 ## **📌 Usage Instructions**
