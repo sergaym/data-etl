@@ -99,34 +99,40 @@ We have drafted an Airflow-based orchestration setup (not yet production-ready):
 # Note: This is a draft implementation
 airflow dags trigger meter_readings_etl
 ```
-
-🔹 **Current Status:**
-- ✅ DAG logic implemented (`meter_readings_etl.py`)
-- ✅ Docker configuration drafted
-- ❌ Not yet tested in production
-- ❌ Pending proper deployment setup
-
-🔹 **Next Steps for Airflow Implementation:**
-1. Test Docker setup
-2. Add monitoring & alerting
-3. Configure proper security
-4. Set up CI/CD pipeline
-5. Document deployment process
-
-For now, please use the manual ETL execution method described above.
+🔹 **Airflow Status:**
+- ✅ DAG logic implemented (`meter_readings_etl.py`).
+- ✅ Configured for **batch processing** (real-time triggers planned).
+- ✅ Integrated with **Docker for local testing**.
+- 🔜 **Pending:** Production deployment validation & security enhancements.
 
 ---
 
-## **📌 Bonus: Streamlit App for Analytics Table Exploration** 🎉  
+## **📌 Deployment: Airflow + Docker**
+### **🔹 Deployment Stack**
+| **Component**         | **Technology**        | **Purpose** |
+|----------------------|---------------------|-------------|
+| **Orchestration**    | **Apache Airflow**  | Manages ETL scheduling. |
+| **Containerization** | **Docker**          | Ensures consistent deployment. |
+| **Database**         | **PostgreSQL**      | Stores raw & transformed data. |
 
-To make data exploration **easier for analysts**, this repository includes a **Streamlit-based web application** that allows users to **interactively explore both raw and transformed analytics tables** stored in PostgreSQL.  
+### **🔹 Running Airflow Locally**
+```bash
+cd deployment
+docker-compose up -d
+```
+To access the Airflow UI, open **`http://localhost:8080`**.
+
+---
+
+## **📌 Bonus: Streamlit App for Analytics** 🎉  
+A **Streamlit-based web app** is included for interactive data exploration.
 
 ### **✅ Features**
 - View **raw & transformed tables** dynamically.  
-- Run **custom SQL queries** on the database.  
+- Run **custom SQL queries** on PostgreSQL.  
 - Visualize **aggregated consumption trends & agreement activations**.  
 
-### **📌 How to Run the Streamlit App**
+### **📌 How to Run**
 ```bash
 streamlit run playground/streamlit-app/main.py
 ```
