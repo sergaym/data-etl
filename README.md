@@ -48,8 +48,8 @@ This ETL pipeline **preserves both raw and transformed data** to support both **
 | **analytics** | `daily_product_consumption` | Aggregated daily consumption per product. |
 
 ✅ **Why this approach?**  
-- **Raw data is preserved for validation, auditing & deep analysis.**  
-- **Transformed data is optimized for BI & dashboards.**  
+- **Raw data is stored before transformation** to ensure **data traceability & recovery**.  
+- **Transformed data is optimized for analytics & reporting**.
 
 ---
 
