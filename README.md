@@ -4,13 +4,12 @@
 This repository contains **Sergio Ayala's solution** for the **technical Data Engineering case study** as part of his application for the **Head of Analytics Platform Engineering** role.  
 
 ### **✅ Project Scope**  
-The challenge requires designing and implementing an **ETL pipeline** that:  
-- ✅ **Processes smart meter readings** from **JSON & SQLite data sources**.  
-- ✅ **Stores raw data** for analysts & **transforms data for reporting**.  
-- ✅ **Implements a modular architecture** to ensure **scalability, automation, and maintainability**.  
-- ✅ **Lays the foundation for future automation** via **Airflow**.  
+- ✅ **Extracts, transforms, and loads** smart meter readings from **JSON & SQLite**.  
+- ✅ **Stores raw data for traceability** and **transforms data for reporting**.  
+- ✅ **Implements a modular, scalable architecture**.  
+- ✅ **Lays the foundation for automation via Airflow & cloud migration**.  
 
-This solution provides a **strong foundation**, with **batch processing & orchestration planned for future iterations**.
+This version **focuses on batch processing**, with **orchestration, monitoring, and real-time ingestion planned**.
 
 ---
 
