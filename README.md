@@ -1,18 +1,14 @@
-Here's the **final refined README**, including the **Streamlit App as a bonus feature** at the bottom while keeping the professional clarity expected for the **Head of Analytics Platform Engineering role**. 🚀  
-
----
-
 # **📊 Smart Meter Readings ETL Pipeline**  
 
 ## **📌 Overview**  
-This repository contains **Sergio Ayala’s solution** for the **technical Data Engineering case study** as part of his application for the **Head of Analytics Platform Engineering** role.  
+This repository contains **Sergio Ayala's solution** for the **technical Data Engineering case study** as part of his application for the **Head of Analytics Platform Engineering** role.  
 
 ### **✅ Project Scope**  
 The challenge requires designing and implementing an **ETL pipeline** that:  
 - ✅ **Processes smart meter readings** from **JSON & SQLite data sources**.  
 - ✅ **Stores raw data** for analysts & **transforms data for reporting**.  
 - ✅ **Implements a modular architecture** to ensure **scalability, automation, and maintainability**.  
-- ✅ **Lays the foundation for future automation** via **Airflow/Dagster**.  
+- ✅ **Lays the foundation for future automation** via **Airflow**.  
 
 This solution provides a **strong foundation**, with **batch processing & orchestration planned for future iterations**.
 
@@ -73,11 +69,18 @@ This ETL pipeline **preserves both raw and transformed data** to support both **
 ## **📌 Future Roadmap**
 | **Feature** | **Why?** | **Priority** |
 |------------|---------|-------------|
+| **Test Coverage & Quality** | Ensure reliability & maintainability. | 🚨 Critical |
 | **Airflow/Dagster Orchestration** | Automate scheduling & monitoring. | 🚀 High |
 | **Cloud Deployment (AWS/GCP)** | Make ETL cloud-native & scalable. | 🔥 High |
 | **Event-Based Processing** | Support near real-time data ingestion. | ⚡ Medium |
 | **Monitoring (Grafana/Prometheus)** | Ensure observability & alerts. | 🔍 Medium |
 | **CI/CD (GitHub Actions)** | Automate testing & deployments. | ✅ Medium |
+
+_Test Coverage Plan:_
+- Unit tests for extraction, transformation & loading
+- Integration tests for end-to-end pipeline
+- Data quality validation tests
+- Performance & scalability tests
 
 ---
 
@@ -97,7 +100,7 @@ To process data for a specific date:
 python -m src.pipelines.etl --reference_date 2023-01-01
 ```
 
-### **3️⃣ Run ETL with Airflow**
+### **3️⃣ Run ETL with Airflow** (🔹 Not yet implemented)
 To schedule the ETL pipeline using **Apache Airflow**:
 ```bash
 airflow dags trigger etl_pipeline
@@ -107,31 +110,6 @@ airflow dags trigger etl_pipeline
 
 ---
 
-## **🛠️ How to Test**
-This repository follows **Test-Driven Development (TDD)** with **unit tests for each ETL step**.
-
-### **1️⃣ Run All Tests**
-```bash
-pytest tests/
-```
-or with test coverage:
-```bash
-pytest --cov=src
-```
-
-### **2️⃣ Test Individual Components**
-```bash
-pytest tests/test_extraction.py
-pytest tests/test_transformation.py
-pytest tests/test_loading.py
-```
-
-✅ **What’s covered?**  
-- **Data extraction works correctly** (valid JSON/DB queries).  
-- **Transformations return correct outputs** (schema, aggregations, business logic).  
-- **Data loads successfully into PostgreSQL** (valid inserts, no duplicates).  
-
----
 
 ## **📌 Bonus: Streamlit App for Analytics Table Exploration** 🎉  
 
@@ -160,4 +138,36 @@ For direct queries, contact 📧 **sergioayala.contacto@gmail.com**.
 ## **📌 TL;DR (Summary)**
 ✅ **What it does:** Extracts, transforms & loads smart meter data into PostgreSQL.  
 ✅ **How to run:** `python -m src.pipelines.etl --reference_date YYYY-MM-DD`.  
-✅ **Next steps:** Automate with **Airflow/Dagster**, deploy to **cloud**, and improve **monitoring**. Include tests.
+✅ **Next steps:** Automate with **Airflow**, deploy to **cloud**, and improve **monitoring**. Include tests.
+
+## **📌 ETL Pipeline Architecture**
+
+### **🔹 Two-Task Pipeline Design**
+The ETL pipeline is divided into two distinct tasks for better scalability and data integrity:
+
+1. **Task 1: Extract & Store Raw**
+   - Extracts data from JSON files and SQLite
+   - Stores in PostgreSQL `raw_data` schema
+   - Ensures data traceability
+
+2. **Task 2: Transform & Load Analytics**
+   - Reads from PostgreSQL raw tables
+   - Transforms data for analytics
+   - Loads to `analytics` schema
+
+### **🔹 Why This Approach?**
+We chose to store raw data first, then transform because:
+- ✅ Ensures data integrity and traceability
+- ✅ Enables independent access to raw data
+- ✅ Supports better error recovery
+- ✅ Facilitates debugging and reprocessing
+
+### **🔹 Airflow Implementation**
+- DAG configured to run tasks sequentially
+- Task 1 runs at 8:30 AM (after source updates)
+- Task 2 runs after Task 1 completes
+- Docker setup drafted (not production-tested)
+
+**Note**: While we have drafted a Dockerized Airflow setup, it's currently in development and needs proper testing before production deployment.
+
+---
