@@ -63,6 +63,7 @@ This ETL pipeline **preserves both raw and transformed data** to support both **
 | **Performance** | Currently **single-threaded**, in-memory transformations. | **Migrate to PySpark** for large-scale distributed processing. |
 | **Orchestration** | No automated scheduling yet. | Integrate **Airflow/Dagster** for automation & monitoring. |
 | **Error Handling** | Basic logging & schema validation. | **Enhance failure recovery** with retries & alerting. |
+| **Cloud Storage** | Reads raw data from local files. | **Migrate raw storage to S3 / cloud-based DB.** |
 
 ---
 
