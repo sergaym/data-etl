@@ -90,7 +90,7 @@ pipenv install
 ### **2️⃣ Run the ETL Manually**
 To process data for a specific date:
 ```bash
-python -m src.pipelines.etl --reference_date 2023-01-01
+python -m src.pipelines.etl.py --reference_date 2023-01-01
 ```
 
 ### **3️⃣ Run ETL with Airflow** (🚧 Draft Implementation)
