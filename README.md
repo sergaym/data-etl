@@ -175,4 +175,3 @@ For direct queries, contact 📧 **sergioayala.contacto@gmail.com**.
 ✅ **How to run:** `python -m src.pipelines.etl --reference_date YYYY-MM-DD`.  
 ✅ **Next steps:** Automate with **Airflow**, migrate to **S3/cloud**, and improve **monitoring & testing**.  
 
-🚀 **Now, the README is fully aligned with a production-ready approach!** Would you like refinements for **cloud deployment or DAG enhancements?**
