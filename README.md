@@ -1,11 +1,7 @@
-Here's the **final refined README**, including the **Streamlit App as a bonus feature** at the bottom while keeping the professional clarity expected for the **Head of Analytics Platform Engineering role**. 🚀  
-
----
-
 # **📊 Smart Meter Readings ETL Pipeline**  
 
 ## **📌 Overview**  
-This repository contains **Sergio Ayala’s solution** for the **technical Data Engineering case study** as part of his application for the **Head of Analytics Platform Engineering** role.  
+This repository contains **Sergio Ayala's solution** for the **technical Data Engineering case study** as part of his application for the **Head of Analytics Platform Engineering** role.  
 
 ### **✅ Project Scope**  
 The challenge requires designing and implementing an **ETL pipeline** that:  
