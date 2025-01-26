@@ -140,9 +140,6 @@ Then, open the app in your browser at **`http://localhost:8501`**.
 
 ---
 
-
----
-
 ## **📩 Contact & Support**
 For any issues or feature requests, please **open a GitHub Issue**.  
 For direct queries, contact 📧 **sergioayala.contacto@gmail.com**.
