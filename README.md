@@ -70,18 +70,12 @@ This ETL pipeline **preserves both raw and transformed data** to support both **
 ## **📌 Future Roadmap**
 | **Feature** | **Why?** | **Priority** |
 |------------|---------|-------------|
-| **Test Coverage & Quality** | Ensure reliability & maintainability. | 🚨 Critical |
-| **Airflow/Dagster Orchestration** | Automate scheduling & monitoring. | 🚀 High |
-| **Cloud Deployment (AWS/GCP)** | Make ETL cloud-native & scalable. | 🔥 High |
+| **S3 Integration & Cloud Migration** | Move raw data to **S3**, replace SQLite with **PostgreSQL RDS**. | 🚨 Critical |
+| **Airflow DAG Optimization** | Implement modular **task-based orchestration**. | 🚀 High |
+| **Test Coverage & Quality** | Ensure reliability & maintainability. | 🔥 High |
 | **Event-Based Processing** | Support near real-time data ingestion. | ⚡ Medium |
 | **Monitoring (Grafana/Prometheus)** | Ensure observability & alerts. | 🔍 Medium |
 | **CI/CD (GitHub Actions)** | Automate testing & deployments. | ✅ Medium |
-
-_Test Coverage Plan:_
-- Unit tests for extraction, transformation & loading
-- Integration tests for end-to-end pipeline
-- Data quality validation tests
-- Performance & scalability tests
 
 ---
 
