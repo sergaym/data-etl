@@ -8,7 +8,7 @@ The challenge requires designing and implementing an **ETL pipeline** that:
 - ✅ **Processes smart meter readings** from **JSON & SQLite data sources**.  
 - ✅ **Stores raw data** for analysts & **transforms data for reporting**.  
 - ✅ **Implements a modular architecture** to ensure **scalability, automation, and maintainability**.  
-- ✅ **Lays the foundation for future automation** via **Airflow/Dagster**.  
+- ✅ **Lays the foundation for future automation** via **Airflow**.  
 
 This solution provides a **strong foundation**, with **batch processing & orchestration planned for future iterations**.
 
