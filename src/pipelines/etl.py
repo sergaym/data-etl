@@ -136,7 +136,7 @@ def transform_and_load_analytics(reference_date: str) -> bool:
         logger.error(f"Analytics pipeline failed: {e}", exc_info=True)
         raise
 
-def run_etl(reference_date: str = '2022-06-15'):
+def run_etl(reference_date: str = '2021-01-01'):
     """Run both ETL tasks in sequence."""
     try:
         total_start_time = time.time()
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--reference_date",
         type=str,
-        default="2022-06-15",
+        default="2021-01-01",
         help="Reference date for processing agreements (YYYY-MM-DD)"
     )
     args = parser.parse_args()
