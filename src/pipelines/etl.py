@@ -1,154 +1,172 @@
 """
-Enterprise-Grade ETL Pipeline for Meter Readings Data.
-- Designed for production deployment with logging, retry logic, and monitoring.
-- Modular structure for scalability and orchestration.
+ETL pipeline for processing meter readings data.
+
+Flow:
+Task 1: Extract & Store Raw
+1. Extract data from JSON files and SQLite
+2. Store raw data in PostgreSQL (incremental)
+
+Task 2: Transform & Load Analytics
+1. Read from PostgreSQL raw tables
+2. Transform data
+3. Store transformed data in analytics tables
 """
 
 import time
 import sys
 import argparse
-import os
 from pathlib import Path
+from datetime import datetime
+from typing import Optional, Dict, Tuple
+import pandas as pd
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent.parent
 sys.path.append(str(project_root))
 
-from extraction import load_json_readings, get_data_summary, DatabaseLoader
-from transformation.transformers import DataTransformer
-from loading.db_writer import PostgresWriter
-from utils.logger import setup_logger
+from src.extraction import load_json_readings, get_data_summary, DatabaseLoader
+from src.transformation import DataTransformer
+from src.loading import PostgresWriter
+from src.utils.logger import setup_logger
+from src.loading.postgres_reader import PostgresReader
 
 logger = setup_logger("etl_pipeline")
 
-def extract_data():
+def extract_and_store_raw(start_date: Optional[datetime] = None) -> bool:
     """
-    Extracts data from JSON files and database tables.
+    Task 1: Extract from source systems and store in raw PostgreSQL tables.
     
+    Args:
+        start_date: Optional timestamp to filter readings after this date
+        
     Returns:
-        tuple: (df_readings, df_agreement, df_product, df_meterpoint)
+        bool: True if successful
     """
     try:
-        start_time = time.time()
-        logger.info("Starting data extraction...")
-
-        # Extract JSON readings
+        total_start_time = time.time()
+        logger.info("Starting raw data extraction and storage...")
+        
+        # Initialize writer
+        writer = PostgresWriter()
+        
+        # Extract JSON readings with optional date filter
         df_readings = load_json_readings()
+        if start_date:
+            df_readings = df_readings[df_readings['interval_start'] > start_date]
+            logger.info(f"Filtered readings after {start_date}")
+        
         readings_summary = get_data_summary(df_readings)
         logger.info(f"Readings Data Summary: {readings_summary}")
-
+        
         # Extract database tables
         db = DatabaseLoader()
         df_agreement = db.load_table('agreement')
         df_product = db.load_table('product')
         df_meterpoint = db.load_table('meterpoint')
-
-        logger.info(f"Data extraction completed in {time.time() - start_time:.2f} seconds")
-        return df_readings, df_agreement, df_product, df_meterpoint
-    
+        
+        # Store raw data
+        writer.ensure_schema_exists(writer.raw_schema)
+        writer.ensure_raw_tables_exist()
+        
+        # Store raw meter readings
+        writer.load_raw_readings(df_readings)
+        
+        # Store reference data
+        reference_data = {
+            'raw_agreements': df_agreement,
+            'raw_products': df_product,
+            'raw_meterpoints': df_meterpoint
+        }
+        
+        for table_name, df in reference_data.items():
+            writer.load_raw_reference_data(table_name, df)
+        
+        duration = time.time() - total_start_time
+        logger.info(f"Raw data pipeline completed in {duration:.2f} seconds")
+        return True
+        
     except Exception as e:
-        logger.error(f"Data extraction failed: {e}", exc_info=True)
-        raise  # Avoid silent failure
+        logger.error(f"Raw data pipeline failed: {e}", exc_info=True)
+        raise
 
-
-def transform_data(df_readings, df_agreement, df_product, df_meterpoint, reference_date):
+def transform_and_load_analytics(reference_date: str) -> bool:
     """
-    Transforms the extracted data into required formats.
-
+    Task 2: Transform raw data and load analytics tables.
+    
     Args:
-        df_readings (pd.DataFrame): Meter readings data.
-        df_agreement (pd.DataFrame): Agreement data.
-        df_product (pd.DataFrame): Product data.
-        df_meterpoint (pd.DataFrame): Meter point data.
-        reference_date (str): Date for filtering agreements.
-
+        reference_date: Reference date for processing
+        
     Returns:
-        tuple: (df_active_agreements, df_halfhourly, df_product_daily)
+        bool: True if successful
     """
     try:
         start_time = time.time()
-        logger.info("Starting data transformation...")
-
+        logger.info("Starting analytics transformation and loading...")
+        
+        # Initialize components
+        writer = PostgresWriter()
+        reader = PostgresReader(writer.engine, writer.raw_schema, writer.analytics_schema)
+        
+        # Read raw data
+        raw_data = reader.read_raw_tables()
+        
+        # Transform data
         transformer = DataTransformer(
-            df_readings=df_readings,
-            df_agreement=df_agreement,
-            df_product=df_product,
-            df_meterpoint=df_meterpoint
+            df_readings=raw_data['readings'],
+            df_agreement=raw_data['agreement'],
+            df_product=raw_data['product'],
+            df_meterpoint=raw_data['meterpoint']
         )
-
+        
         df_active_agreements = transformer.get_active_agreements(reference_date)
         df_halfhourly = transformer.get_halfhourly_consumption()
         df_product_daily = transformer.get_daily_product_consumption()
-
-        logger.info(f"Data transformation completed in {time.time() - start_time:.2f} seconds")
-        return df_active_agreements, df_halfhourly, df_product_daily
-
-    except Exception as e:
-        logger.error(f"Data transformation failed: {e}", exc_info=True)
-        raise
-
-
-def load_data(df_active_agreements, df_halfhourly, df_product_daily, reference_date):
-    """
-    Loads transformed data into PostgreSQL and validates results.
-
-    Args:
-        df_active_agreements (pd.DataFrame): Processed active agreements.
-        df_halfhourly (pd.DataFrame): Half-hourly consumption data.
-        df_product_daily (pd.DataFrame): Daily product consumption data.
-        reference_date (str): Reference date for validation.
-    """
-    try:
-        start_time = time.time()
-        logger.info("Starting data loading...")
-
-        writer = PostgresWriter()
-        writer.create_analytics_schema()
-        writer.write_active_agreements(df_active_agreements, reference_date=reference_date)
+        
+        # Store transformed data
+        writer.ensure_schema_exists(writer.analytics_schema)
+        writer.write_active_agreements(df_active_agreements, reference_date)
         writer.write_halfhourly_consumption(df_halfhourly)
         writer.write_daily_product_consumption(df_product_daily)
-
-        # Validate loaded data
-        table_info = writer.get_table_info()
-        for table, info in table_info.items():
-            logger.info(f"{table}: {info['row_count']} rows, last update {info['last_update']}")
-
-        logger.info(f"Data loading completed in {time.time() - start_time:.2f} seconds")
-
+        
+        duration = time.time() - start_time
+        logger.info(f"Analytics pipeline completed in {duration:.2f} seconds")
+        return True
+        
     except Exception as e:
-        logger.error(f"Data loading failed: {e}", exc_info=True)
+        logger.error(f"Analytics pipeline failed: {e}", exc_info=True)
         raise
 
-
-def run_etl(reference_date):
-    """
-    Runs the full ETL pipeline with the provided reference date.
-
-    Args:
-        reference_date (str): Reference date for processing agreements.
-    """
+def run_etl(reference_date: str = '2022-06-15'):
+    """Run both ETL tasks in sequence."""
     try:
         total_start_time = time.time()
         logger.info(f"Starting ETL pipeline for reference date: {reference_date}")
-
-        # Execute each stage sequentially
-        df_readings, df_agreement, df_product, df_meterpoint = extract_data()
-        df_active_agreements, df_halfhourly, df_product_daily = transform_data(
-            df_readings, df_agreement, df_product, df_meterpoint, reference_date
-        )
-        load_data(df_active_agreements, df_halfhourly, df_product_daily, reference_date)
-
-        logger.info(f"ETL pipeline completed successfully in {time.time() - total_start_time:.2f} seconds")
-
+        
+        # Get latest timestamp for incremental load
+        writer = PostgresWriter()
+        latest_ts = writer.get_latest_reading_timestamp()
+        
+        # Task 1: Extract and Store Raw Data
+        extract_and_store_raw(start_date=latest_ts)
+        
+        # Task 2: Transform and Load Analytics
+        transform_and_load_analytics(reference_date)
+        
+        duration = time.time() - total_start_time
+        logger.info(f"ETL pipeline completed successfully in {duration:.2f} seconds")
+        
     except Exception as e:
         logger.error(f"ETL pipeline failed: {e}", exc_info=True)
         sys.exit(1)
 
-
 if __name__ == "__main__":
-    # Parse CLI arguments for reference date
     parser = argparse.ArgumentParser(description="Run the ETL pipeline.")
-    parser.add_argument("--reference_date", type=str, default="2022-06-15", help="Reference date for processing agreements (YYYY-MM-DD)")
+    parser.add_argument(
+        "--reference_date",
+        type=str,
+        default="2022-06-15",
+        help="Reference date for processing agreements (YYYY-MM-DD)"
+    )
     args = parser.parse_args()
-
+    
     run_etl(args.reference_date)
