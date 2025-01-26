@@ -2,10 +2,14 @@
 ETL pipeline for processing meter readings data.
 
 Flow:
-1. Extract data from sources
+Task 1: Extract & Store Raw
+1. Extract data from JSON files and SQLite
 2. Store raw data in PostgreSQL (incremental)
-3. Transform data
-4. Store transformed data
+
+Task 2: Transform & Load Analytics
+1. Read from PostgreSQL raw tables
+2. Transform data
+3. Store transformed data in analytics tables
 """
 
 import time
@@ -13,7 +17,7 @@ import sys
 import argparse
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Tuple
 import pandas as pd
 
 # Add project root to Python path
@@ -28,16 +32,22 @@ from src.loading.postgres_reader import PostgresReader
 
 logger = setup_logger("etl_pipeline")
 
-def extract_data(start_date: Optional[datetime] = None):
+def extract_and_store_raw(start_date: Optional[datetime] = None) -> bool:
     """
-    Extract data from JSON files and SQLite database.
+    Task 1: Extract from source systems and store in raw PostgreSQL tables.
     
     Args:
         start_date: Optional timestamp to filter readings after this date
+        
+    Returns:
+        bool: True if successful
     """
     try:
-        start_time = time.time()
-        logger.info("Starting data extraction...")
+        total_start_time = time.time()
+        logger.info("Starting raw data extraction and storage...")
+        
+        # Initialize writer
+        writer = PostgresWriter()
         
         # Extract JSON readings with optional date filter
         df_readings = load_json_readings()
@@ -54,30 +64,14 @@ def extract_data(start_date: Optional[datetime] = None):
         df_product = db.load_table('product')
         df_meterpoint = db.load_table('meterpoint')
         
-        logger.info(f"Data extraction completed in {time.time() - start_time:.2f} seconds")
-        return df_readings, df_agreement, df_product, df_meterpoint
-    
-    except Exception as e:
-        logger.error(f"Data extraction failed: {e}", exc_info=True)
-        raise
-
-def store_raw_data(writer: PostgresWriter, df_readings, df_agreement, df_product, df_meterpoint):
-    """Store raw data in PostgreSQL before transformation."""
-    try:
-        total_start_time = time.time()
-        logger.info("Starting raw data storage...")
-        
-        # Step 2.1: Ensure schemas and tables exist
+        # Store raw data
         writer.ensure_schema_exists(writer.raw_schema)
         writer.ensure_raw_tables_exist()
         
-        # Step 2.2: Store raw meter readings (largest table) with efficient bulk loading
-        readings_start = time.time()
+        # Store raw meter readings
         writer.load_raw_readings(df_readings)
-        logger.info(f"Raw readings stored in {time.time() - readings_start:.2f} seconds")
         
-        # Step 2.3: Store reference data tables (smaller tables)
-        ref_start = time.time()
+        # Store reference data
         reference_data = {
             'raw_agreements': df_agreement,
             'raw_products': df_product,
@@ -86,25 +80,37 @@ def store_raw_data(writer: PostgresWriter, df_readings, df_agreement, df_product
         
         for table_name, df in reference_data.items():
             writer.load_raw_reference_data(table_name, df)
-            
-        logger.info(f"Reference data stored in {time.time() - ref_start:.2f} seconds")
-        logger.info(f"Total raw data storage completed in {time.time() - total_start_time:.2f} seconds")
+        
+        duration = time.time() - total_start_time
+        logger.info(f"Raw data pipeline completed in {duration:.2f} seconds")
+        return True
         
     except Exception as e:
-        logger.error(f"Raw data storage failed: {e}", exc_info=True)
+        logger.error(f"Raw data pipeline failed: {e}", exc_info=True)
         raise
 
-def transform_data(writer: PostgresWriter, reference_date: str):
-    """Transform data using DataTransformer module."""
+def transform_and_load_analytics(reference_date: str) -> bool:
+    """
+    Task 2: Transform raw data and load analytics tables.
+    
+    Args:
+        reference_date: Reference date for processing
+        
+    Returns:
+        bool: True if successful
+    """
     try:
         start_time = time.time()
-        logger.info("Starting data transformation...")
+        logger.info("Starting analytics transformation and loading...")
         
-        # Read raw data using PostgresReader from the same database connection
+        # Initialize components
+        writer = PostgresWriter()
         reader = PostgresReader(writer.engine, writer.raw_schema, writer.analytics_schema)
+        
+        # Read raw data
         raw_data = reader.read_raw_tables()
         
-        # Use DataTransformer for transformations
+        # Transform data
         transformer = DataTransformer(
             df_readings=raw_data['readings'],
             df_agreement=raw_data['agreement'],
@@ -116,62 +122,39 @@ def transform_data(writer: PostgresWriter, reference_date: str):
         df_halfhourly = transformer.get_halfhourly_consumption()
         df_product_daily = transformer.get_daily_product_consumption()
         
-        logger.info(f"Data transformation completed in {time.time() - start_time:.2f} seconds")
-        return df_active_agreements, df_halfhourly, df_product_daily
-    
-    except Exception as e:
-        logger.error(f"Data transformation failed: {e}", exc_info=True)
-        raise
-
-def store_transformed_data(writer: PostgresWriter, df_active_agreements, df_halfhourly, df_product_daily, reference_date):
-    """Store transformed data in PostgreSQL analytics schema."""
-    try:
-        start_time = time.time()
-        logger.info("Starting transformed data storage...")
-        
-        # Ensure analytics schema exists
-        writer.ensure_schema_exists(writer.analytics_schema)
-        
         # Store transformed data
+        writer.ensure_schema_exists(writer.analytics_schema)
         writer.write_active_agreements(df_active_agreements, reference_date)
         writer.write_halfhourly_consumption(df_halfhourly)
         writer.write_daily_product_consumption(df_product_daily)
         
-        logger.info(f"Transformed data storage completed in {time.time() - start_time:.2f} seconds")
+        duration = time.time() - start_time
+        logger.info(f"Analytics pipeline completed in {duration:.2f} seconds")
+        return True
         
     except Exception as e:
-        logger.error(f"Transformed data storage failed: {e}", exc_info=True)
+        logger.error(f"Analytics pipeline failed: {e}", exc_info=True)
         raise
 
 def run_etl(reference_date: str = '2022-06-15'):
-    """Run the complete ETL pipeline with raw data storage."""
+    """Run both ETL tasks in sequence."""
     try:
         total_start_time = time.time()
         logger.info(f"Starting ETL pipeline for reference date: {reference_date}")
         
-        # Initialize PostgreSQL writer
+        # Get latest timestamp for incremental load
         writer = PostgresWriter()
-        
-        # Step 1: Extract Data (only new readings)
         latest_ts = writer.get_latest_reading_timestamp()
-        df_readings, df_agreement, df_product, df_meterpoint = extract_data(start_date=latest_ts)
         
-        # Step 2: Store Raw Data
-        store_raw_data(writer, df_readings, df_agreement, df_product, df_meterpoint)
-
-        # Step 3: Transform Data (using raw tables)
-        df_active_agreements, df_halfhourly, df_product_daily = transform_data(
-            writer, reference_date
-        )
-
-        # Step 4: Store Transformed Data
-        store_transformed_data(
-            writer, df_active_agreements, df_halfhourly, df_product_daily, reference_date
-        )
+        # Task 1: Extract and Store Raw Data
+        extract_and_store_raw(start_date=latest_ts)
+        
+        # Task 2: Transform and Load Analytics
+        transform_and_load_analytics(reference_date)
         
         duration = time.time() - total_start_time
         logger.info(f"ETL pipeline completed successfully in {duration:.2f} seconds")
-
+        
     except Exception as e:
         logger.error(f"ETL pipeline failed: {e}", exc_info=True)
         sys.exit(1)
