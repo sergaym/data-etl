@@ -13,18 +13,23 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Install pipenv
+RUN pip install --no-cache-dir pipenv
+
 # Switch to airflow user
 USER airflow
 
-# Copy requirements first for better caching
-COPY requirements.txt /opt/airflow/requirements.txt
-RUN pip install --no-cache-dir -r /opt/airflow/requirements.txt
+# Copy Pipfile and Pipfile.lock first for better caching
+COPY Pipfile* /opt/airflow/
+
+# Install dependencies using pipenv
+WORKDIR /opt/airflow
+RUN pipenv install --system --deploy
 
 # Copy project files
 COPY --chown=airflow:root . /opt/airflow/
 
 # Install project package
-WORKDIR /opt/airflow
 RUN pip install -e .
 
 # Environment variables
