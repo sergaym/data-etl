@@ -6,15 +6,17 @@ x-airflow-common: &airflow-common
     dockerfile: deployment/Dockerfile
   environment: &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PGUSER}:${PGPASSWORD}@postgres/airflow
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-    AIRFLOW__CORE__FERNET_KEY: ${FERNET_KEY}
-    AIRFLOW__WEBSERVER__SECRET_KEY: ${WEBSERVER_SECRET_KEY}
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=}
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:-a-really-really-really-really-long-secret-key}
     AIRFLOW__CORE__PYTHON_VERSION: '3.11'
-    POSTGRES_HOST: postgres-data
-    POSTGRES_DB: meter_readings
-    POSTGRES_USER: ${POSTGRES_USER}
-    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # Map PG* variables to POSTGRES_* for consistency
+    POSTGRES_HOST: ${PGHOST}
+    POSTGRES_DB: ${PGDATABASE}
+    POSTGRES_USER: ${PGUSER}
+    POSTGRES_PASSWORD: ${PGPASSWORD}
+    PGSSLMODE: ${PGSSLMODE}
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
@@ -51,7 +53,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      test: ["CMD", "pg_isready", "-U", "${PGUSER}"]
       interval: 5s
       retries: 5
     restart: always
