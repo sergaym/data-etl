@@ -1,82 +1,79 @@
-x-airflow-common: &airflow-common
-  build:
-    context: ..
-    dockerfile: deployment/Dockerfile
-  environment: &airflow-common-env
-    AIRFLOW__CORE__EXECUTOR: LocalExecutor
-    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PGUSER}:${PGPASSWORD}@postgres/airflow
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
-    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=}
-    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:-a-really-really-really-really-long-secret-key}
-    AIRFLOW__CORE__PYTHON_VERSION: '3.11'
-    # Map PG* variables to POSTGRES_* for consistency
-    POSTGRES_HOST: ${PGHOST}
-    POSTGRES_DB: ${PGDATABASE}
-    POSTGRES_USER: ${PGUSER}
-    POSTGRES_PASSWORD: ${PGPASSWORD}
-    PGSSLMODE: ${PGSSLMODE}
-  volumes:
-    - ./dags:/opt/airflow/dags
-    - ./logs:/opt/airflow/logs
-    - ./plugins:/opt/airflow/plugins
-    - ./data:/opt/airflow/data
-    - ./tests:/opt/airflow/tests
-  depends_on: &airflow-common-depends-on
-    postgres:
-      condition: service_healthy
-    postgres-data:
-      condition: service_healthy
-
 services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: airflow
-      POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "airflow"]
-      interval: 5s
-      retries: 5
-    restart: always
-
-  postgres-data:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: ${PGDATABASE}
-      POSTGRES_USER: ${PGUSER}
-      POSTGRES_PASSWORD: ${PGPASSWORD}
-      POSTGRES_HOST: ${PGHOST}
-      PGSSLMODE: ${PGSSLMODE}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${PGUSER}"]
-      interval: 5s
-      retries: 5
-    restart: always
-
   webserver:
-    <<: *airflow-common
-    command: webserver
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: airflow_webserver
+    restart: always
+    env_file:
+      - .env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=}
+      AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW__WEBSERVER__SECRET_KEY:-a-really-really-really-really-long-secret-key}
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN_EXTRA: '{"executemany_mode": "batch"}'
+      # Data warehouse connection (Neon DB)
+      PGHOST: ${PGHOST}
+      PGDATABASE: ${PGDATABASE}
+      PGUSER: ${PGUSER}
+      PGPASSWORD: ${PGPASSWORD}
+      PGSSLMODE: ${PGSSLMODE}
     ports:
       - "8080:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./data:/opt/airflow/data
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-    restart: always
 
   scheduler:
-    <<: *airflow-common
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: airflow_scheduler
+    restart: always
+    env_file:
+      - .env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}
     command: scheduler
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      test: ["CMD", "airflow", "jobs", "check", "--job-type", "SchedulerJob", "--hostname", "$(hostname)"]
       interval: 30s
       timeout: 10s
       retries: 5
-    restart: always
 
-volumes:
-  postgres_data: 
+  init:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: airflow_init
+    restart: on-failure
+    env_file:
+      - .env
+    environment:
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db init && \
+        airflow users create \
+          --username admin \
+          --password admin \
+          --firstname Anonymous \
+          --lastname Admin \
+          --role Admin \
+          --email admin@example.com
