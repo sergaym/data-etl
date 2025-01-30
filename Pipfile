@@ -8,11 +8,14 @@ pandas = "==2.2.1"
 numpy = "==1.26.4"
 jupyter = "==1.0.0"
 ipykernel = "==6.29.3"
-sqlalchemy = "==2.0.27"
+sqlalchemy = "<2.0"
 python-dotenv = "==1.0.1"
 psycopg2-binary = "==2.9.9"
+psycopg = "*"
 streamlit = "==1.41.1"
 plotly = "==5.19.0"
+apache-airflow = {version = "==2.10.4", extras = ["postgres"]}
+apache-airflow-providers-openlineage = ">=1.8.0"
 
 [dev-packages]
 black = "==24.2.0"
