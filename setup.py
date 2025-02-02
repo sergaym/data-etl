@@ -12,7 +12,7 @@ setup(
     install_requires=[
         "pandas>=2.2.1",
         "numpy>=1.26.4",
-        "sqlalchemy>=2.0.27",
+        "sqlalchemy==1.4.51",  # Pin to SQLAlchemy 1.4 for compatibility with Airflow 2.10.4
         "python-dotenv>=1.0.1",
         "psycopg2-binary>=2.9.9",
         "streamlit>=1.41.1",
