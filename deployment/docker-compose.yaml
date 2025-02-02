@@ -1,0 +1,34 @@
+services:
+  airflow-webserver:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/opt/airflow
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./plugins:/opt/airflow/plugins
+      - ./logs:/opt/airflow/logs
+      - ./db:/opt/airflow/db
+    command: webserver
+    depends_on:
+      - airflow-scheduler
+
+  airflow-scheduler:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/opt/airflow
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./plugins:/opt/airflow/plugins
+      - ./logs:/opt/airflow/logs
+      - ./db:/opt/airflow/db
+    command: scheduler
