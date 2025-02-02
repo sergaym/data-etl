@@ -5,6 +5,8 @@ services:
       dockerfile: deployment/Dockerfile
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/opt/airflow
     ports:
       - "8081:8080"
     volumes:
@@ -22,6 +24,8 @@ services:
       dockerfile: deployment/Dockerfile
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/opt/airflow
     volumes:
       - ./dags:/opt/airflow/dags
       - ./plugins:/opt/airflow/plugins
