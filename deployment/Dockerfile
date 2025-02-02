@@ -1,36 +1,33 @@
-# Use Python 3.11 Airflow image
-FROM apache/airflow:2.8.1-python3.11
+# Use the official Airflow image with Python 3.11 as the base
+FROM apache/airflow:2.10.4-python3.11
 
+# Set the working directory inside the container
+WORKDIR /opt/airflow
+
+# Copy the environment file from the deployment folder
+COPY .env .
+
+# Copy Pipfile, Pipfile.lock, and setup.py from the project root (build context is the parent folder)
+COPY Pipfile Pipfile.lock setup.py ./
+
+# Copy the source code package from the "src" directory
+COPY src ./src
+
+# Switch to root to change ownership so the Airflow user can write to the src directory.
 USER root
-
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    postgresql-client \
-    curl \
-    git \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Switch to airflow user
+# Use the environment variable AIRFLOW_UID if defined, otherwise default to 50000.
+RUN chown -R ${AIRFLOW_UID:-50000}:${AIRFLOW_UID:-50000} /opt/airflow/src
 USER airflow
 
-# Copy requirements first for better caching
-COPY requirements.txt /opt/airflow/requirements.txt
-RUN pip install --no-cache-dir -r /opt/airflow/requirements.txt
+# Install pipenv and use it to install dependencies.
+RUN pip install pipenv && pipenv install --deploy --ignore-pipfile
 
-# Copy project files
-COPY --chown=airflow:root . /opt/airflow/
-
-# Install project package
-WORKDIR /opt/airflow
+# Install your package in editable mode so that your DAGs can import it.
 RUN pip install -e .
 
-# Environment variables
-ENV PYTHONPATH=/opt/airflow:$PYTHONPATH
-ENV AIRFLOW_HOME=/opt/airflow
-ENV PYTHON_VERSION=3.11
+# Copy DAGs and plugins from the deployment folder into the container.
+COPY deployment/dags /opt/airflow/dags
+COPY deployment/plugins /opt/airflow/plugins
 
-# Health check
-HEALTHCHECK CMD ["airflow", "jobs", "check", "--job-type", "SchedulerJob", "--hostname", "$(hostname)"] 
+# (Optional) If you want tests inside the image:
+# COPY deployment/tests /opt/airflow/tests

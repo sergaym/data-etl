@@ -7,6 +7,7 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from dotenv import load_dotenv
 
 # Page config
@@ -19,10 +20,10 @@ st.set_page_config(
 # Load environment variables
 load_dotenv()
 
-def get_db_connection():
+def get_db_connection() -> Engine:
     """Create database connection using environment variables."""
     connection_string = (
-        f"postgresql://{os.getenv('PGUSER')}:{os.getenv('PGPASSWORD')}"
+        f"postgresql+psycopg2://{os.getenv('PGUSER')}:{os.getenv('PGPASSWORD')}"
         f"@{os.getenv('PGHOST')}/{os.getenv('PGDATABASE')}?sslmode=require"
     )
     return create_engine(connection_string)
@@ -30,7 +31,8 @@ def get_db_connection():
 def run_query(query: str) -> pd.DataFrame:
     """Execute a SQL query and return results as a DataFrame."""
     engine = get_db_connection()
-    return pd.read_sql_query(query, engine)
+    with engine.connect() as connection:
+        return pd.read_sql_query(query, con=connection)
 
 def main():
     """Main Streamlit app."""
@@ -194,4 +196,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# to runstreamlit run playground/streamlit-app/main.py
+# To run: streamlit run playground/streamlit-app/main.py
