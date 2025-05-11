@@ -2,3 +2,6 @@
 .DS_Store
 logs/*.log
 airflow-docker/logs/
+deployment/logs/*
+readings/*
+case_study.db
